@@ -1,0 +1,157 @@
+name: "info_app.yml"
+on:
+  push:
+    branches: [ main, cicd ]
+    paths:
+        - .github/workflows/info_app.yml
+        - .github/Info_app_backend/**
+  pull_request:
+    branches: [ main, hotfix-* ]
+    paths:
+        - .github/workflows/info_app.yml
+  workflow_dispatch:
+
+env:   #Environment Variables(use-artifact naming)
+  artifact_name: "info_app.yml"   #pipeline যখন build তৈরি করবে, তখন সেটার artifact নাম হবে integration-ui
+  version_major: '1' #api changes/feature remove              
+  version_minor: '1' #new fwature/improvement
+  version_patch: '1' #bug fix/security fix
+  build_number: '2.0.0.${{ github.run_number }}'
+
+permissions:
+  id-token: write #GitHub OIDC(OPEN ID CONNECT) token generate kora allready repo add in frederate credential azure fred.cred veryfy kora azure login hoi
+  contents: read   #Repo files read korte parbe.
+  pull-requests: write. #PR comment/write korte parbe
+
+jobs:
+
+  # Job-1 Build
+  build-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+  ##################### Job-2 Unit Test (Parallel)
+  unit-test:
+    needs: build-job #when build will completed then it will start # its mean dependency।
+    if: success()  # build-job sucess হলে তবেই run হবে।
+    #success(), failure(), and always() are built-in GitHub Actions functions used in conditional
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Unit Tests
+        run: ./gradlew test
+
+  # Job-3 Sonar Scan (Parallel)
+  sonar-scan:
+    needs: build-job
+    if: success()
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sonar Scan
+        run: |
+          ./gradlew sonarqube \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+          -Dsonar.host.url=${{ secrets.SONAR_URL }}
+
+  # Job-4 Docker Build
+  docker-build:
+    needs:
+      - unit-test
+      - sonar-scan
+
+    if: success()
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: python scripts/build.py
+
+  # Job-5 Docker Push
+  docker-push:
+    needs: docker-build
+    if: success()
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name myacrname
+
+      - name: Tag and Push Docker Image to ACR
+        run: |
+          docker tag myapp:latest myacrname.azurecr.io/info_app.yml:${{ github.run_number }}
+          docker push myacrname.azurecr.io/info_app.yml:${{ github.run_number }}
+
+#DOCKER LOGIN IS REQUIRED OR NOT HOW ACR AUTHENTICATED?
+#No docker loging not reuired
+#Azure Login-এর জন্য: আমরা azure_credential use kori, তবে GitHub Actions 
+# সরাসরি একটি OIDC Token (OpenID Connect) জেনারেট করে Azure-এর সাথে পাসওয়ার্ড-লেস ট্রাস্ট তৈরি করে।
+# ACR-এর জন্য: Azure-এ লগইন হওয়ার পর, az acr login কমান্ডটি ব্যাকগ্রাউন্ডে একটি OAuth Access Token 
+# তুলে এনে সরাসরি Docker Daemon-এর কাছে হস্তান্তর করে, যার ফলে কোনো স্ট্যাটিক পাসওয়ার্ড ছাড়াই ডকার 
+# ইমেজ পুশ করা সম্ভব হয়।"
+
+  ##################### Job-6 Deploy#################################
+  #################################################################
+  deploy:
+  needs: docker-push
+  if: success()
+  runs-on: ubuntu-latest
+
+  steps: 
+    # 1. Login to Azure using Federated Credentials / GitHub Secret
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }} #azure loging call AZURE_CREDENTIALS for secret
+#When we create App Registration/service principe azure Provide us one jason file into the jason_ClientId_ClientSecret_TenantId_SubscriptionId
+#After geting this data go to GitHub Repository -> Settings -> Secrets and variables-action-new repo and save the daat
+#by AZURE_CREDENTIALS
+    # 2. Fetch Secrets Dynamically from Azure Key Vault
+    - name: Get Secrets from Key Vault
+      uses: azure/get-keyvault-secrets@v1
+      id: kvSecrets 
+      with:
+        keyvault: 'production-kv-madhav' #কী ভল্টের নাম
+        secrets: 'db-password, api-token'  # যে সিক্রেটগুলো দরকার
+
+    # 3. Deploy and Update Container App with fetched Application Secrets
+    - name: Deploy to Container App
+      run: |
+        az containerapp update \
+          --name ioa-app \
+          --resource-group ioa-rg \
+          --image ghcr.io/company/info_app.yml:${{ github.run_number }} \
+          --set-env-vars "DB_PASSWORD=${{ steps.kvSecrets.outputs.db-password }}" "API_TOKEN=${{ steps.kvSecrets.outputs.api-token }}"
+
+

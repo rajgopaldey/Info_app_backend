@@ -95,23 +95,25 @@ jobs:
     if: success()
     runs-on: ubuntu-latest
     
+    # ⚠️ IMPORTANT: OIDC token bananor jonno id-token write permission zaroori!
     permissions:
       id-token: write
       contents: read
 
-      - name: Azure Login
-        uses: azure/login@v1
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC (Federated Credentials)
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
         run: |
           az acr login --name myacrname
-
-      - name: Tag and Push Docker Image to ACR
-        run: |
-          docker tag myapp:latest myacrname.azurecr.io/info_app.yml:${{ github.run_number }}
-          docker push myacrname.azurecr.io/info_app.yml:${{ github.run_number }}
 
 #DOCKER LOGIN IS REQUIRED OR NOT HOW ACR AUTHENTICATED?
 #No docker loging not reuired

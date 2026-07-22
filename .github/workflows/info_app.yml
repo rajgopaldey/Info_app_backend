@@ -113,7 +113,7 @@ jobs:
         run: |
           az acr login --name acrmyapplication
 
-      # 1. Direct Python Script run path (Docker build hocche local runner-e)
+      ## 1. Direct Python Script run path (Docker build hocche local runner-e)
       - name: Build Docker Image via Script
         run: python scripts/build.py
 

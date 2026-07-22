@@ -131,7 +131,7 @@ jobs:
       - name: Build Docker Image via Script
         run: python scripts/build.py
 
-      # 2. Local Image-ke Tag & ACR-e Push
+      ## 2. Local Image-ke Tag & ACR-e Push
       - name: Push Docker Image to ACR
         run: |
           docker tag info_app acrmyapplication.azurecr.io/info_app_backend:${{ github.run_number }}

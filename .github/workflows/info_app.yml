@@ -130,7 +130,7 @@ jobs:
 
   ##################### Job-6 Deploy#################################
   #################################################################
-deploy:
+  deploy:
     needs: docker-push
     if: success()
     runs-on: ubuntu-latest

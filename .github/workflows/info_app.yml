@@ -100,12 +100,9 @@ jobs:
         run: python scripts/build.py
 
   # Job-5 Docker Push
-  docker-push:
-    needs: docker-build
-    if: success()
+   docker-build-and-push:
     runs-on: ubuntu-latest
-    
-    # ⚠️ IMPORTANT: OIDC token bananor jonno id-token write permission zaroori#####
+
     permissions:
       id-token: write
       contents: read
@@ -114,7 +111,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Azure Login via OIDC (Federated Credentials)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -123,13 +125,20 @@ jobs:
 
       - name: Login to Azure Container Registry
         run: |
-          az acr login --name myacrname
-# 🚀 Image Build & Push Step (Ekshathe build and ACR push)
-      - name: Build and Push Docker Image to ACR
-        run: |
-          docker build -t myacrname.azurecr.io/info_app_backend:${{ github.run_number }} .
-          docker push myacrname.azurecr.io/info_app_backend:${{ github.run_number }}
+          az acr login --name acrmyapplication
 
+      # 1. Direct Python Script run path (Docker build hocche local runner-e)
+      - name: Build Docker Image via Script
+        run: python scripts/build.py
+
+      # 2. Local Image-ke Tag & ACR-e Push
+      - name: Push Docker Image to ACR
+        run: |
+          docker tag info_app acrmyapplication.azurecr.io/info_app_backend:${{ github.run_number }}
+          docker tag info_app acrmyapplication.azurecr.io/info_app_backend:latest
+          
+          docker push acrmyapplication.azurecr.io/info_app_backend:${{ github.run_number }}
+          docker push acrmyapplication.azurecr.io/info_app_backend:latest
 ##DOCKER LOGIN IS REQUIRED OR NOT HOW ACR AUTHENTICATED?
 #No docker loging not reuired
 #Azure Login-এর জন্য: আমরা azure_credential use kori, তবে GitHub Actions 

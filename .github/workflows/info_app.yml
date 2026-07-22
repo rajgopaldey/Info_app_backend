@@ -3,8 +3,10 @@ on:
   push:
     branches: [ main, cicd ]
     paths:
-        - .github/workflows/info_app.yml
-        -  Info_app_backend/**
+      - '.github/workflows/info_app.yml'
+      - 'Info_app_backend/**'              # Root folder path
+      - 'src/**'                          # Direct source code path (jodi root-e source files thake)
+      - 'build.gradle'
   pull_request:
     branches: [ main, hotfix-* ]
     paths:

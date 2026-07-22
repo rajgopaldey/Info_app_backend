@@ -115,7 +115,7 @@ jobs:
         run: |
           az acr login --name myacrname
 
-#DOCKER LOGIN IS REQUIRED OR NOT HOW ACR AUTHENTICATED?
+##DOCKER LOGIN IS REQUIRED OR NOT HOW ACR AUTHENTICATED?
 #No docker loging not reuired
 #Azure Login-এর জন্য: আমরা azure_credential use kori, তবে GitHub Actions 
 # সরাসরি একটি OIDC Token (OpenID Connect) জেনারেট করে Azure-এর সাথে পাসওয়ার্ড-লেস ট্রাস্ট তৈরি করে।

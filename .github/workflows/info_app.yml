@@ -21,7 +21,7 @@ env:   #Environment Variables(use-artifact naming)
 permissions:
   id-token: write #GitHub OIDC(OPEN ID CONNECT) token generate kora allready repo add in frederate credential azure fred.cred veryfy kora azure login hoi
   contents: read   #Repo files read korte parbe.
-  pull-requests: write. #PR comment/write korte parbe
+  pull-requests: write #PR comment/write korte parbe
 
 jobs:
 
@@ -43,7 +43,7 @@ jobs:
 
   ##################### Job-2 Unit Test (Parallel)
   unit-test:
-    needs: build-job #when build will completed then it will start # its mean dependency।
+    needs: build-job #when build will completed then it will start # its mean dependency
     if: success()  # build-job sucess হলে তবেই run হবে।
     #success(), failure(), and always() are built-in GitHub Actions functions used in conditional
 

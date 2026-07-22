@@ -25,9 +25,8 @@ permissions:
   contents: read   #Repo files read korte parbe.
   pull-requests: write #PR comment/write korte parbe
 
+  ## Job-1 Build#############
 jobs:
-
-  ## Job-1 Build
   build-job:
     runs-on: ubuntu-latest
 

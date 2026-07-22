@@ -105,7 +105,7 @@ jobs:
     if: success()
     runs-on: ubuntu-latest
     
-    # ⚠️ IMPORTANT: OIDC token bananor jonno id-token write permission zaroori!
+    # ⚠️ IMPORTANT: OIDC token bananor jonno id-token write permission zaroori#####
     permissions:
       id-token: write
       contents: read

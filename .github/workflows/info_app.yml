@@ -47,7 +47,7 @@ jobs:
       - name: Build with Gradle
         run: gradle clean build -x test #its mean github runner install the gradele
 
-  ##################### Job-2 Unit Test (Parallel)#
+  ##################### Job-2 Unit Test (Parallel)#####
   unit-test:
     needs: build-job                                   #when build will completed then it will start # its mean dependency
     if: success()  # build-job sucess হলে তবেই run হবে।

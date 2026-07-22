@@ -33,6 +33,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Java   #jdk install for for gradel
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17' # Tomar project-er JDK version (17/21)
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -43,7 +49,7 @@ jobs:
 
   ##################### Job-2 Unit Test (Parallel)
   unit-test:
-    needs: build-job #when build will completed then it will start # its mean dependency
+    needs: build-job                                   #when build will completed then it will start # its mean dependency
     if: success()  # build-job sucess হলে তবেই run হবে।
     #success(), failure(), and always() are built-in GitHub Actions functions used in conditional
 
